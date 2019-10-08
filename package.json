@@ -1,0 +1,19 @@
+{
+  "name": "mynodeapi",
+  "version": "1.0.0",
+  "description": "My Node API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marssola/mynodeapi.git"
+  },
+  "author": "Mauro Marssola",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/marssola/mynodeapi/issues"
+  },
+  "homepage": "https://github.com/marssola/mynodeapi#readme"
+}
