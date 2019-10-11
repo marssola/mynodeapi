@@ -4,7 +4,8 @@
   "description": "My Node API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "local": "ENV=local ./node_modules/nodemon/bin/nodemon.js src/index.js",
+    "production": "ENV=local ./node_modules/nodemon/bin/nodemon.js src/index.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,19 @@
   "bugs": {
     "url": "https://github.com/marssola/mynodeapi/issues"
   },
-  "homepage": "https://github.com/marssola/mynodeapi#readme"
+  "homepage": "https://github.com/marssola/mynodeapi#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "http": "0.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.7.3",
+    "morgan": "^1.9.1",
+    "nodemailer": "^6.3.1",
+    "nodemailer-express-handlebars": "^3.1.0",
+    "nodemon": "^1.19.3",
+    "path": "^0.12.7"
+  }
 }
