@@ -60,4 +60,6 @@ typings/
 
 # next.js build output
 .next
->>>>>>> 7359638fcc1b2fc3cc1a3c0c85759603fe33dc66
+
+src/config/auth.json
+src/config/mail.json
