@@ -14,7 +14,7 @@ transport.use('compile', hbs({
         helpers: undefined,
         compilerOptions: undefined
     },
-    viewPath: path.resolve('./src/resources/mail'),
+    viewPath: path.resolve(`${__dirname}/../resources/mail`),
     extName: '.html',
 }))
 
