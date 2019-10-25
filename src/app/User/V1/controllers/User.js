@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const User = require('../model')
+const UserModel = require('../../models/User')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const authConfig = require('../../../../config/auth')
@@ -9,7 +9,7 @@ const bcrypt = require('bcryptjs')
 let req = {}
 let res = {}
 
-class Users {    
+class User {    
     constructor (_req, _res) {
         req = _req, res = _res
         this.fieldsNotCreated = ['_id', '__v', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires', 'status', 'activationCode']
@@ -22,7 +22,7 @@ class Users {
             if (!name || !phone || !email || !password)
                 return res.error(`'email', 'password', 'name' and 'phone' are required`)
             
-            if (await User.findOne({ email }))
+            if (await UserModel.findOne({ email }))
                 return res.error('User already exist')
             
             const user = new User({})
@@ -52,7 +52,7 @@ class Users {
             if (!email || !activationCode)
                 return res.error(`'email' and 'activationCode' are required`)
             
-            let user = await User.findOne({ email }).select("+activationCode")
+            let user = await UserModel.findOne({ email }).select("+activationCode")
             if (!user)
                 return res.error(`User not found`)
             if (!user.activationCode)
@@ -76,7 +76,7 @@ class Users {
             if (!email)
                 return res.error(`'email' is required`)
             
-            let user = await User.findOne({ email })
+            let user = await UserModel.findOne({ email })
             if (!user)
                 return res.error(`User not found`)
             if (user.status)
@@ -102,7 +102,7 @@ class Users {
     async getUser () {
         try {
             let { _id } = req.user
-            let data = await User.findOne({ _id })
+            let data = await UserModel.findOne({ _id })
             if (!data)
                 return res.error('User not found')
             if (!data.status)
@@ -121,7 +121,7 @@ class Users {
                 return res.error(`No data received`)
             
             let { _id } = req.user
-            let user = await User.findOne({ _id })
+            let user = await UserModel.findOne({ _id })
             if (!user)
                 return res.error(`User not found`)
             if (!user.status)
@@ -139,7 +139,7 @@ class Users {
     async deleteUser () {
         try {
             let { _id } = req.user
-            let user = await User.findOne({ _id })
+            let user = await UserModel.findOne({ _id })
             if (!user)
                 return res.error(`User not found`)
             if (!user.status)
@@ -155,7 +155,7 @@ class Users {
     
     async login () {
         let { email, password } = req.body
-        const user = await User.findOne({ email }).select('+password')
+        const user = await UserModel.findOne({ email }).select('+password')
         if (!user)
             return res.error({ email: 'User not found' })
         if (!user.status)
@@ -164,7 +164,7 @@ class Users {
             return res.error({ password: 'Invalid password' })
         
         user.password = undefined
-        await User.updateOne({ _id: user._id }, { $set: { loggedAt: new Date() } })
+        await UserModel.updateOne({ _id: user._id }, { $set: { loggedAt: new Date() } })
         
         let data = { token: generateToken({ _id: user._id, email: user.email }) }
         return res.success({ data })
@@ -176,7 +176,7 @@ class Users {
             if (!email)
                 return res.error({ email: `'email' is required` })
             
-            const user = await User.findOne({ email })
+            const user = await UserModel.findOne({ email })
             if (!user)
                 return res.error('User not found')
             
@@ -208,7 +208,7 @@ class Users {
             if (!email || !token || !password)
                 return res.error(`'email', 'token' and 'password' are required`)
             
-            let user = await User.findOne({ email }).select('+passwordResetToken +passwordResetExpires')
+            let user = await UserModel.findOne({ email }).select('+passwordResetToken +passwordResetExpires')
             if (!user)
                 return res.error('User not found')
             if (user.passwordResetToken !== token)
@@ -237,4 +237,4 @@ const generatePinCode = () => {
     return parseInt((Math.random() * 99999999999).toFixed().padStart(4, 1).slice(0, 4))
 }
 
-module.exports = Users
+module.exports = User

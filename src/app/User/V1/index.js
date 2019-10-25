@@ -3,7 +3,7 @@ const router = express.Router()
 const auth = require('../../../middlewares/auth')
 const response = require('../../../middlewares/response')
 
-const UserController = require('./controller/User')
+const UserController = require('./controllers/User')
 
 router.use(response)
 
