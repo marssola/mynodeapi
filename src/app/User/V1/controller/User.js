@@ -12,8 +12,8 @@ let res = {}
 class Users {    
     constructor (_req, _res) {
         req = _req, res = _res
-        this.fieldsNotCreated = ['_id', '__v', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires', 'status']
-        this.fieldsNotUpdated = ['_id', '__v', 'email', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires']
+        this.fieldsNotCreated = ['_id', '__v', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires', 'status', 'activationCode']
+        this.fieldsNotUpdated = ['_id', '__v', 'email', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires', 'activationCode']
     }
 
     async addUser () {
@@ -39,10 +39,7 @@ class Users {
             })
             await user.save()
             
-            user.password = undefined
-            user.updatedAt = undefined
-            user.activationCode = undefined
-            return res.success({})
+            return res.success({ message: 'User created' })
         } catch (err) {
             console.log(err)
             return res.error(err)
@@ -67,7 +64,7 @@ class Users {
             user.activationCode = undefined
             await user.save()
             
-            return res.success({})
+            return res.success({ message: `User successfully activated` })
         } catch (err) {
             return res.error(err)
         }
@@ -79,12 +76,11 @@ class Users {
             if (!email)
                 return res.error(`'email' is required`)
             
-            let user = await User.findOne({ email }).select("+activationCode")
+            let user = await User.findOne({ email })
             if (!user)
                 return res.error(`User not found`)
             if (user.status)
-                return res.error(`User account is enabled`)
-            
+                return res.error(`User account is already active`)
             const pinCode = generatePinCode()
             user.activationCode = pinCode
             
@@ -96,7 +92,7 @@ class Users {
             })
             await user.save()
             
-            return res.success({})
+            return res.success({ message: `Activation code sent successfully` })
         } catch (err) {
             console.log(err)
             return res.error(err)
@@ -110,8 +106,8 @@ class Users {
             if (!data)
                 return res.error('User not found')
             if (!data.status)
-                return res.error('User not enabled')
-            return res.success({ data })
+                return res.error('User account is not active')
+            return res.success(data)
             
         } catch (err) {
             console.log(err)
@@ -129,11 +125,11 @@ class Users {
             if (!user)
                 return res.error(`User not found`)
             if (!user.status)
-                return res.error('User not enabled')
+                return res.error('User account is not active')
             Object.keys(req.body).map(k => this.fieldsNotUpdated.indexOf(k) < 0 ? user[k] = req.body[k] : null)
             await user.save()
             
-            return res.success({})
+            return res.success({ message: `User data updated successfully` })
         } catch (err) {
             console.log(err)
             return res.error(err)
@@ -147,10 +143,10 @@ class Users {
             if (!user)
                 return res.error(`User not found`)
             if (!user.status)
-                return res.error('User not enabled')
+                return res.error('User account is not active')
             await user.remove()
             
-            return res.success({})
+            return res.success({ message: `User account has been deleted successfully` })
         } catch (err) {
             console.log(err)
             return res.error(err)
@@ -163,7 +159,7 @@ class Users {
         if (!user)
             return res.error({ email: 'User not found' })
         if (!user.status)
-                return res.error('User not enabled')
+                return res.error('User account is not active')
         if (!await bcrypt.compare(password, user.password))
             return res.error({ password: 'Invalid password' })
         
@@ -199,7 +195,7 @@ class Users {
                 context: { token }
             })
             
-            return res.success({})
+            return res.success({ message: `The code to recover your password was successfully sent to your email` })
         } catch (err) {
             console.log(err)
             return res.error(err)
@@ -216,16 +212,16 @@ class Users {
             if (!user)
                 return res.error('User not found')
             if (user.passwordResetToken !== token)
-                return res.error('token is invalid')
+                return res.error('Token is invalid')
             if (new Date() > user.passwordResetExpires)
-                return res.error('token is expired, generate a new one')
+                return res.error('Token is expired, generate a new one')
             
             user.password = password
             user.passwordResetToken = undefined
             user.passwordResetExpires = undefined
             await user.save()
             
-            return res.success({})
+            return res.success({ message: `Your password has been changed successfully` })
         } catch (err) {
             console.log(err)
             return res.error(err)
