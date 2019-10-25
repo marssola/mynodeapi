@@ -1,8 +1,11 @@
 const express = require('express')
 const router = express.Router()
 const auth = require('../../../middlewares/auth')
+const response = require('../../../middlewares/response')
 
 const UserController = require('./controller/User')
+
+router.use(response)
 
 router.post('/', async (req, res) => (new UserController(req, res)).addUser())
 

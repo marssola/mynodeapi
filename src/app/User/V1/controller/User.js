@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const authConfig = require('../../../../config/auth')
 const mailer = require('../../../../modules/mail')
+const bcrypt = require('bcryptjs')
 
 let req = {}
 let res = {}
@@ -14,22 +15,15 @@ class Users {
         this.fieldsNotCreated = ['_id', '__v', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires', 'status']
         this.fieldsNotUpdated = ['_id', '__v', 'email', 'createdAt', 'updatedAt', 'loggedAt', 'passwordResetToken', 'passwordResetExpires']
     }
-    
-    static successHandler (data) {
-        return res.status(200).send({ success: true, data })
-    }
-    
-    static errorHandler (error) {
-        return res.status((error ? 400 : 500)).send({ success: false, error })
-    }
-    
+
     async addUser () {
         try {
-            if (!req.body.email || !req.body.password || !req.body.name || !req.body.phone)
-                return Users.errorHandler(`'email', 'password', 'name' and 'phone' are required`)
+            let { name, phone, email, password } = req.body
+            if (!name || !phone || !email || !password)
+                return res.error(`'email', 'password', 'name' and 'phone' are required`)
             
-            if (await User.findOne({ email: req.body.email }))
-                return Users.errorHandler('User already exist')
+            if (await User.findOne({ email }))
+                return res.error('User already exist')
             
             const user = new User({})
             Object.keys(req.body).map(k => this.fieldsNotCreated.indexOf(k) < 0 ? user[k] = req.body[k] : null)
@@ -48,140 +42,147 @@ class Users {
             user.password = undefined
             user.updatedAt = undefined
             user.activationCode = undefined
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async activeAccount () {
         try {
-            if (!req.body.email || !req.body.activationCode)
-                return Users.errorHandler(`'email' and 'activationCode' are required`)
+            let { email, activationCode } = req.body
+            if (!email || !activationCode)
+                return res.error(`'email' and 'activationCode' are required`)
             
-            let user = await User.findOne({ email: req.body.email }).select("+activationCode")
+            let user = await User.findOne({ email }).select("+activationCode")
             if (!user)
-                return Users.errorHandler(`User not found`)
+                return res.error(`User not found`)
             if (!user.activationCode)
-                return Users.errorHandler(`Activation code is no longer valid`)
-            if (user.activationCode !== (req.body.activationCode))
-                return Users.errorHandler(`Activation code is invalid`)
+                return res.error(`Activation code is no longer valid`)
+            if (user.activationCode !== activationCode)
+                return res.error(`Activation code is invalid`)
             
             user.status = true
             user.activationCode = undefined
             await user.save()
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async resendActivationCode () {
         try {
-            if (!req.body.email)
-                return Users.errorHandler(`'email' is required`)
+            let { email } = req.body
+            if (!email)
+                return res.error(`'email' is required`)
             
-            let user = await User.findOne({ email: req.body.email }).select("+activationCode")
+            let user = await User.findOne({ email }).select("+activationCode")
             if (!user)
-                return Users.errorHandler(`User not found`)
+                return res.error(`User not found`)
             if (user.status)
-                return Users.errorHandler(`User account is enabled`)
+                return res.error(`User account is enabled`)
             
             const pinCode = generatePinCode()
             user.activationCode = pinCode
             
             await mailer.sendMail({
-                to: req.body.email,
+                to: email,
                 from: 'mauro.marssola@hotmail.com',
                 template: 'auth/active-account',
                 context: { pinCode }
             })
             await user.save()
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async getUser () {
         try {
-            let user = await User.findOne({ _id: req.user._id })
-            if (!user)
-                return Users.errorHandler('User not found')
-            if (!user.status)
-                return Users.errorHandler('User not enabled')
-            return Users.successHandler({ user })
+            let { _id } = req.user
+            let data = await User.findOne({ _id })
+            if (!data)
+                return res.error('User not found')
+            if (!data.status)
+                return res.error('User not enabled')
+            return res.success({ data })
             
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async updateUser () {
         try {
             if (!Object.keys(req.body).length)
-                return Users.errorHandler(`No data received`)
+                return res.error(`No data received`)
             
-            let user = await User.findOne({ _id: req.user._id })
+            let { _id } = req.user
+            let user = await User.findOne({ _id })
             if (!user)
-                return Users.errorHandler(`User not found`)
+                return res.error(`User not found`)
             if (!user.status)
-                return Users.errorHandler('User not enabled')
+                return res.error('User not enabled')
             Object.keys(req.body).map(k => this.fieldsNotUpdated.indexOf(k) < 0 ? user[k] = req.body[k] : null)
             await user.save()
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async deleteUser () {
         try {
-            let user = await User.findOne({ _id: req.user._id })
+            let { _id } = req.user
+            let user = await User.findOne({ _id })
             if (!user)
-                return Users.errorHandler(`User not found`)
+                return res.error(`User not found`)
             if (!user.status)
-                return Users.errorHandler('User not enabled')
+                return res.error('User not enabled')
             await user.remove()
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async login () {
-        const bcrypt = require('bcryptjs')
-        const user = await User.findOne({email: req.body.email}).select('+password')
+        let { email, password } = req.body
+        const user = await User.findOne({ email }).select('+password')
         if (!user)
-            return Users.errorHandler({ email: 'User not found' })
+            return res.error({ email: 'User not found' })
         if (!user.status)
-                return Users.errorHandler('User not enabled')
-        if (!await bcrypt.compare(req.body.password, user.password))
-            return Users.errorHandler({ password: 'Invalid password' })
+                return res.error('User not enabled')
+        if (!await bcrypt.compare(password, user.password))
+            return res.error({ password: 'Invalid password' })
         
         user.password = undefined
         await User.updateOne({ _id: user._id }, { $set: { loggedAt: new Date() } })
         
-        return Users.successHandler({ token: generateToken({ _id: user._id, email: user.email }) })
+        let data = { token: generateToken({ _id: user._id, email: user.email }) }
+        return res.success({ data })
     }
     
     async forgotPassword () {
         try {
-            if (!req.body.email)
-                return Users.errorHandler({ email: `'email' is required` })
+            let { email } = req.body
+            if (!email)
+                return res.error({ email: `'email' is required` })
             
-            const user = await User.findOne({ email: req.body.email })
+            const user = await User.findOne({ email })
             if (!user)
-                return Users.errorHandler('User not found')
+                return res.error('User not found')
             
             const token = crypto.randomBytes(20).toString('hex')
             const expires = new Date()
@@ -198,35 +199,36 @@ class Users {
                 context: { token }
             })
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
     
     async resetPassword () {
         try {
-            if (!req.body.email || !req.body.token || !req.body.password)
-                return Users.errorHandler(`'email', 'token' and 'password' are required`)
+            let { email, token, password } = req.body
+            if (!email || !token || !password)
+                return res.error(`'email', 'token' and 'password' are required`)
             
-            let user = await User.findOne({ email: req.body.email }).select('+passwordResetToken +passwordResetExpires')
+            let user = await User.findOne({ email }).select('+passwordResetToken +passwordResetExpires')
             if (!user)
-                return Users.errorHandler('User not found')
-            if (user.passwordResetToken !== req.body.token)
-                return Users.errorHandler('token is invalid')
+                return res.error('User not found')
+            if (user.passwordResetToken !== token)
+                return res.error('token is invalid')
             if (new Date() > user.passwordResetExpires)
-                return Users.errorHandler('token is expired, generate a new one')
+                return res.error('token is expired, generate a new one')
             
-            user.password = req.body.password
+            user.password = password
             user.passwordResetToken = undefined
             user.passwordResetExpires = undefined
             await user.save()
             
-            return Users.successHandler()
+            return res.success({})
         } catch (err) {
             console.log(err)
-            return Users.errorHandler(err)
+            return res.error(err)
         }
     }
 }
