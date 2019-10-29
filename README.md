@@ -1,2 +1,0 @@
-# mynodeapi
-My Node API

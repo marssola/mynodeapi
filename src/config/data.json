@@ -1,0 +1,16 @@
+{
+    "availableCoins": [
+        { "coin": 1, "quant": 20 },
+        { "coin": 5, "quant": 13 },
+        { "coin": 10, "quant": 2 },
+        { "coin": 25, "quant": 22 },
+        { "coin": 50, "quant": 1 },
+        { "coin": 100, "quant": 14 }
+    ],
+    "products": [
+        { "name": "Salgadinho Fofura", "price": 1.45 },
+        { "name": "Salgadinho Fandangos", "price": 1.80 },
+        { "name": "Salgadinho Cheetos", "price": 6.00},
+        { "name": "Refrigerante Coca-Cola", "price": 3.80 }
+    ]
+}
