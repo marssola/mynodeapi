@@ -1,3 +1,4 @@
+*.lock
 *.kdev4*
 # Logs
 logs
